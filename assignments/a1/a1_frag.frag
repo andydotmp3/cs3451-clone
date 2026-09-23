@@ -55,11 +55,9 @@ vec3 drawTriangle(vec2 pos, vec2 center, vec3 color)
 bool inCircle(vec2 pos, vec2 center, float radius)
 {
     /* your implementation starts */
-    
-	
+    vec2 diff = pos - center;
+    return dot(diff, diff) < radius * radius;
     /* your implementation ends */
-    
-    return false;
 }
 
 //// This function calls the inCircle function you implemented above and returns the color of the circle
@@ -84,11 +82,8 @@ vec3 drawCircle(vec2 pos, vec2 center, float radius, vec3 color)
 bool inRectangle(vec2 pos, vec2 leftBottom, vec2 rightTop)
 {
     /* your implementation starts */
-    
-	
+    return pos.x >= leftBottom.x && pos.x <= rightTop.x && pos.y >= leftBottom.y && pos.y <= rightTop.y;
     /* your implementation ends */
-    
-    return false;
 }
 
 //// This function calls the inRectangle function you implemented above and returns the color of the rectangle
@@ -111,11 +106,11 @@ void mainImage(in vec2 fragCoord, out vec4 fragColor)
 
     //// By default we draw an animated triangle 
     vec3 fragOutput = drawTriangle(fragCoord, center, vec3(1.0));
-    
+
     //// Step 1: Uncomment this line to draw a circle
     // fragOutput = drawCircle(fragCoord, center, 250, vec3(1.0));
 
-    
+
     //// Step 2: Uncomment this line to draw a rectangle 
     // fragOutput = drawRectangle(fragCoord, center - vec2(500, 50), center + vec2(500, 50), vec3(1.0));
 
@@ -134,10 +129,51 @@ void mainImage(in vec2 fragCoord, out vec4 fragColor)
     else{
         fragColor = vec4(fragOutput, 1.0);
     }
+    // return;
 
     //// Step 5: Implement your customized scene by modifying the mainImage function
     //// Try to leverage what you have learned from Step 1 to 4 to define the shape and color of a new object in the fragment shader
     //// Notice how we put multiple objects together by adding their color values
+
+    // as far as i understand it here's how this works
+    // this function runs for EVERY PIXEL on the screen
+    // we have to figure out where this pixel belongs to
+    // so if it's in where the sun is supposed to be make it yellow, house = tan, etc.
+
+    // sun circle
+    vec2 sunCenter = vec2(iResolution.x * 0.85, iResolution.y * 0.85);
+    float sunRadius = 40. + iTime * 120.;
+    if(inCircle(fragCoord, sunCenter, sunRadius)) {
+        fragColor = vec4(1.00, 0.85, 0.20, 1.0);
+        return;
+    }
+
+    // floor rectangle
+    float floorTop = iResolution.y * 0.3;
+    if(inRectangle(fragCoord, vec2(0., 0.), vec2(iResolution.x, floorTop))) {
+        fragColor = vec4(0.30, 0.70, 0.25, 1.0);
+        return;
+    }
+
+    // house rectangle
+    vec2 wallLeftBottomCorner = vec2(center.x - 130., floorTop);
+    vec2 wallRightTopCorner = vec2(center.x + 130., floorTop + 180.);
+    if(inRectangle(fragCoord, wallLeftBottomCorner, wallRightTopCorner)) {
+        fragColor = vec4(0.85, 0.55, 0.35, 1.0);
+        return;
+    }
+
+    // roof traingle
+    vec2 roofLeft = vec2(wallLeftBottomCorner.x - 30., wallRightTopCorner.y);
+    vec2 roofRight = vec2(wallRightTopCorner.x + 30., wallRightTopCorner.y);
+    vec2 roofPeak = vec2(center.x, wallRightTopCorner.y + 140.);
+    if(inTriangle(fragCoord, roofLeft, roofRight, roofPeak)) {
+        fragColor = vec4(0.60, 0.15, 0.15, 1.0);
+        return;
+    }
+
+    // sky
+    fragColor = vec4(BG_COLOR, 1.0);
 }
 
 void main()
